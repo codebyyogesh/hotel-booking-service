@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -13,6 +14,10 @@ const(
     minLastNameLen  = 2
     minPasswordLen  = 7
 )
+type UpdateUserParams struct{
+    FirstName string `json:"firstName"`
+    LastName  string `json:"lastName"`
+}
 
 type CreateUserParams struct{
     FirstName string `json:"firstName"`
@@ -29,6 +34,29 @@ type User struct{
     EncryptedPassword string `bson:"EncryptedPassword" json:"-"`
 }
 
+// TODO : Add errors for this function
+func (params UpdateUserParams) ValidateUpdateUserParams() bool{
+
+    if len(params.FirstName) < minFirstNameLen {
+        return false
+    }
+    if len(params.LastName) < minLastNameLen {
+        return false
+    }
+    return true
+}
+
+// TODO: handle errors in this function
+func (params UpdateUserParams) ToBsonD() bson.D {
+    d := bson.D{}
+    if params.ValidateUpdateUserParams() {
+        d = append(d, bson.E{Key: "firstName", Value: params.FirstName})
+    }
+    if params.ValidateUpdateUserParams() {
+        d = append(d, bson.E{Key: "lastName", Value: params.LastName})
+    }
+    return d
+}
 
 func (params CreateUserParams)ValidateUserParams() map[string]string{
     errors := map[string]string{}

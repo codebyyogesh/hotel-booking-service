@@ -15,6 +15,31 @@ func NewUserHandler(userstore db.UserStore ) *UserHandler{
     }
 } 
 
+func (h *UserHandler)HandlePutUser(c *fiber.Ctx) error{
+    var (
+        UserID = c.Params("id")  // user ID = in json it is "id"
+        ctx = c.Context()
+    )
+    var params types.UpdateUserParams
+
+    if err := c.BodyParser(&params); err != nil {
+        return err
+    }
+    h.userStore.UpdateUser(ctx, UserID,  &params)
+    return c.JSON(map[string]string{"Updated": UserID})
+}
+
+func (h *UserHandler)HandleDeleteUser(c *fiber.Ctx) error{
+    var (
+        UserID = c.Params("id")  // user ID = in json it is "id"
+        ctx = c.Context()
+    )
+    if err := h.userStore.DeleteUser(ctx, UserID); err != nil{
+        return err
+    }
+    return c.JSON(map[string]string{"Deleted": UserID})
+}
+
 // post handler
 func (h *UserHandler)HandlePostUser(c *fiber.Ctx) error{
     var params types.CreateUserParams
@@ -22,7 +47,7 @@ func (h *UserHandler)HandlePostUser(c *fiber.Ctx) error{
         return err
     }
     // Validate User before using it
-    if errors := params.ValidateUserParams(); errors != nil{
+    if errors := params.ValidateUserParams(); len(errors) > 0{
         return c.JSON(errors)
     }
     // Now we have the correct user after validation
