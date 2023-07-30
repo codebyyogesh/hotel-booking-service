@@ -30,19 +30,19 @@ type User struct{
 }
 
 
-func (params CreateUserParams)ValidateUserParams() []string{
-    errors := []string{}
+func (params CreateUserParams)ValidateUserParams() map[string]string{
+    errors := map[string]string{}
     if len(params.FirstName) < minFirstNameLen{
-        errors = append(errors, fmt.Sprintf("firstName length should be at least %d characters", minFirstNameLen))
+        errors["firstName"] = fmt.Sprintf("firstName length should be at least %d characters", minFirstNameLen)
     }
     if len(params.LastName) < minLastNameLen {
-        errors = append(errors, fmt.Sprintf("lastName length should be at least %d characters", minLastNameLen))
+        errors["lastName"] = fmt.Sprintf("lastName length should be at least %d characters", minLastNameLen)
     }
     if len(params.Password) < minPasswordLen {
-        errors = append(errors, fmt.Sprintf("password length should be at least %d characters", minPasswordLen))
+        errors["password"] = fmt.Sprintf("password length should be at least %d characters", minPasswordLen)
     }
     if !isEmailValid(params.Email) {
-        errors = append(errors, "invalid email")
+        errors["email"] =  "invalid email"
     }
     return errors
 }
