@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/codebyyogesh/hotel-booking-service/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -10,7 +12,12 @@ import (
 
 const userCollection = "users"
 
+type Dropper interface {
+    Drop(context.Context) error
+}
+
 type UserStore interface{
+    Dropper
     GetUserByID(context.Context, string) (*types.User, error)
     GetUsers(context.Context) (*[]types.User, error) // *[]types.User will be a pointer to a slice
     // PS: []*types.User will be slice of pointers to object of type User
@@ -24,11 +31,17 @@ type MongoUserStore struct{
     collection *mongo.Collection
 }
 
-func NewMongoUserStore(client *mongo.Client) *MongoUserStore{
+
+func NewMongoUserStore(client *mongo.Client, dbname string) *MongoUserStore{
     return &MongoUserStore{
         client: client,
-        collection: client.Database(DBNAME).Collection(userCollection),
+        collection: client.Database(dbname).Collection(userCollection),
     }
+}
+
+func (s *MongoUserStore) Drop(ctx context.Context) error {
+    fmt.Println("--- dropping user collection")
+    return s.collection.Drop(ctx)
 }
 
 // PS: ToBsonD() converts to BsonD format, also it does some basic validation

@@ -13,6 +13,7 @@ import (
 )
 
 const dburi = "mongodb://localhost:27017"
+const dbname = "hotel-booking"
 
 var config = fiber.Config{
     ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -35,7 +36,7 @@ func main(){
     // can be passed as param to NewUserHandler which accepts interface
     // as param. i.e. *mongoUserStore implements the UserStore interface.
     // Interfaces even works for the pointers.
-    mongoUserStore := db.NewMongoUserStore(client)
+    mongoUserStore := db.NewMongoUserStore(client, dbname)
     userHandler := api.NewUserHandler(mongoUserStore)
 
     app := fiber.New(config)
