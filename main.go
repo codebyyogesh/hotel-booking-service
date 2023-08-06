@@ -12,9 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const dburi = "mongodb://localhost:27017"
-const dbname = "hotel-booking"
-
 var config = fiber.Config{
     ErrorHandler: func(c *fiber.Ctx, err error) error {
         return c.JSON(map[string]string{"error": err.Error()})
@@ -23,7 +20,7 @@ var config = fiber.Config{
 
 
 func main(){
-    client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dburi))
+    client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
     if err != nil {
         log.Fatal(err)
     }
@@ -36,16 +33,31 @@ func main(){
     // can be passed as param to NewUserHandler which accepts interface
     // as param. i.e. *mongoUserStore implements the UserStore interface.
     // Interfaces even works for the pointers.
-    mongoUserStore := db.NewMongoUserStore(client, dbname)
-    userHandler := api.NewUserHandler(mongoUserStore)
+    var(
+        mongoUserStore = db.NewMongoUserStore(client, db.DBNAME)
+        userHandler    = api.NewUserHandler(mongoUserStore)
+    )
 
-    app := fiber.New(config)
-    apiv1 := app.Group("/api/v1")      // /api/v1
+    var(
+        app   = fiber.New(config)
+        apiv1 = app.Group("/api/v1")      // /api/v1
+    )
 
+    // user handlers
     apiv1.Post("/user", userHandler.HandlePostUser)
     apiv1.Get("/user", userHandler.HandleGetUsers)
     apiv1.Get("/user/:id", userHandler.HandleGetUser)
     apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
     apiv1.Put("/user/:id", userHandler.HandlePutUser)
+
+    var(
+        hotelStore   = db.NewMongoHotelStore(client)
+        roomStore    = db.NewMongoRoomStore(client, hotelStore)
+        hotelHandler = api.NewHotelHandler(hotelStore, roomStore)
+    )
+    // hotel handlers
+    apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
+
+
     app.Listen(*listenAddr)
 }

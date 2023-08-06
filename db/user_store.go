@@ -62,7 +62,7 @@ func (s *MongoUserStore)UpdateUser(ctx context.Context, id string, params *types
     return nil
 }
 
-    func (s *MongoUserStore)DeleteUser(ctx context.Context, id string ) error {
+func (s *MongoUserStore)DeleteUser(ctx context.Context, id string ) error {
     // Mongodb does not accept direct ids, we need some kind of conversion to object id
     oid, err := primitive.ObjectIDFromHex(id)
     if err != nil{
