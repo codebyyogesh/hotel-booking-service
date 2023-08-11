@@ -34,13 +34,18 @@ func main(){
     // as param. i.e. *mongoUserStore implements the UserStore interface.
     // Interfaces even works for the pointers.
     var(
-        mongoUserStore = db.NewMongoUserStore(client, db.DBNAME)
-        userHandler    = api.NewUserHandler(mongoUserStore)
-    )
-
-    var(
-        app   = fiber.New(config)
-        apiv1 = app.Group("/api/v1")      // /api/v1
+        userStore      = db.NewMongoUserStore(client)
+        hotelStore     = db.NewMongoHotelStore(client)
+        roomStore      = db.NewMongoRoomStore(client, hotelStore)
+        store          = &db.Store{
+                        Hotels: hotelStore,
+                        Rooms: roomStore,
+                        User: userStore,
+        }
+        userHandler    = api.NewUserHandler(userStore)
+        hotelHandler   = api.NewHotelHandler(store)
+        app            =  fiber.New(config)
+        apiv1          = app.Group("/api/v1")      // /api/v1
     )
 
     // user handlers
@@ -50,14 +55,10 @@ func main(){
     apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
     apiv1.Put("/user/:id", userHandler.HandlePutUser)
 
-    var(
-        hotelStore   = db.NewMongoHotelStore(client)
-        roomStore    = db.NewMongoRoomStore(client, hotelStore)
-        hotelHandler = api.NewHotelHandler(hotelStore, roomStore)
-    )
     // hotel handlers
     apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
-
+    apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
+    apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
 
     app.Listen(*listenAddr)
 }

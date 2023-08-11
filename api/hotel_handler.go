@@ -1,37 +1,41 @@
 package api
 
 import (
-	"fmt"
 
 	"github.com/codebyyogesh/hotel-booking-service/db"
 	"github.com/gofiber/fiber/v2"
 )
 
 type HotelHandler struct{
-    hotelStore db.HotelStore
-    roomStore db.RoomStore
+    store *db.Store 
 }
 
-func NewHotelHandler(hs db.HotelStore, rs db.RoomStore) *HotelHandler{
+func NewHotelHandler(store *db.Store) *HotelHandler{
     return &HotelHandler{
-        hotelStore: hs,
-        roomStore : rs,
+        store : store,
     }
 }
 
-type HotelQueryParam struct{
-    Room bool
-    Rating int
-}
-// get hotels list
-func (h *HotelHandler)HandleGetHotels(c *fiber.Ctx) error{
-    var qparam HotelQueryParam
-    err := c.QueryParser(&qparam)
+func (h *HotelHandler)HandleGetRooms(c *fiber.Ctx) error{
+    id := c.Params("id")
+    rooms, err := h.store.Rooms.GetRooms(c.Context(), id)
     if err != nil{
         return err
     }
-    fmt.Println(qparam)
-    hotels, err := h.hotelStore.GetHotels(c.Context(), nil)
+    return c.JSON(rooms)
+}
+
+func (h *HotelHandler)HandleGetHotel(c *fiber.Ctx) error{
+    id := c.Params("id")
+    hotel, err := h.store.Hotels.GetHotelByID(c.Context(), id)
+    if err != nil{
+        return err
+    }
+    return c.JSON(hotel)
+}
+// get hotels list
+func (h *HotelHandler)HandleGetHotels(c *fiber.Ctx) error{
+    hotels, err := h.store.Hotels.GetHotels(c.Context(), nil)
     if err != nil{
         return err
     }
