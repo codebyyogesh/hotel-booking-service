@@ -18,6 +18,7 @@ type Dropper interface {
 
 type UserStore interface{
     Dropper
+    GetUserByEmail(context.Context, string) (*types.User, error)
     GetUserByID(context.Context, string) (*types.User, error)
     GetUsers(context.Context) (*[]types.User, error) // *[]types.User will be a pointer to a slice
     // PS: []*types.User will be slice of pointers to object of type User
@@ -85,6 +86,14 @@ func (s *MongoUserStore)InsertUser(ctx context.Context, user *types.User ) (*typ
     return user, nil
 }
 
+func (s *MongoUserStore)GetUserByEmail(ctx context.Context, email string) (*types.User,error) {
+    // Mongodb does not accept direct ids, we need some kind of conversion to object id
+    var user types.User
+    if err:= s.collection.FindOne(ctx, bson.M{"email":email}).Decode(&user); err != nil{
+        return nil, err
+    }
+    return &user, nil
+}
 func (s *MongoUserStore)GetUserByID(ctx context.Context, id string) (*types.User,error) {
     // Mongodb does not accept direct ids, we need some kind of conversion to object id
     oid, err := primitive.ObjectIDFromHex(id)

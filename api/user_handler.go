@@ -1,6 +1,7 @@
 package api
 
 import (
+
 	"github.com/codebyyogesh/hotel-booking-service/db"
 	"github.com/codebyyogesh/hotel-booking-service/types"
 	"github.com/gofiber/fiber/v2"
@@ -13,7 +14,7 @@ func NewUserHandler(userstore db.UserStore ) *UserHandler{
     return &UserHandler{
         userStore: userstore,
     }
-} 
+}
 
 func (h *UserHandler)HandlePutUser(c *fiber.Ctx) error{
     var (

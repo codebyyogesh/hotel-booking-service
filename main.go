@@ -6,6 +6,7 @@ import (
 	"log"
 
 	api "github.com/codebyyogesh/hotel-booking-service/api"
+	"github.com/codebyyogesh/hotel-booking-service/api/middleware"
 	"github.com/codebyyogesh/hotel-booking-service/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,10 +45,15 @@ func main(){
         }
         userHandler    = api.NewUserHandler(userStore)
         hotelHandler   = api.NewHotelHandler(store)
-        app            =  fiber.New(config)
-        apiv1          = app.Group("/api/v1")      // /api/v1
+        authHandler    = api.NewAuthHandler(userStore)
+        app            = fiber.New(config)
+        auth           = app.Group("/api")
+        apiv1          = app.Group("/api/v1", middleware.JWTAuthentication)      // /api/v1
     )
+    // auth handlers
+    auth.Post("/auth", authHandler.HandleAuthenticate)
 
+    // Versioned API routes
     // user handlers
     apiv1.Post("/user", userHandler.HandlePostUser)
     apiv1.Get("/user", userHandler.HandleGetUsers)
