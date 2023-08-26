@@ -10,38 +10,48 @@ import (
 
 
 func JWTAuthentication(c *fiber.Ctx) error {
-    fmt.Println("...JWT...")
     token, ok := c.GetReqHeaders()["X-Api-Token"] // ok=true, if map key exists, else false
     if !ok{
+        fmt.Println("token not present in the header")
         return fmt.Errorf("unauthorized")
     }
-    if err := parseToken(token); err != nil{
+    claims, err := validateToken(token)
+    if err != nil{
         return err
     }
-    fmt.Println("token:", token)
-    return nil
+    err = claims.Valid() // checks for time expiration of the token.
+    if err != nil{
+        return fmt.Errorf("token expired")
+    } 
+
+    return c.Next() // move to the next part
 }
 
-func parseToken(tokenString string) error {
+func validateToken(tokenString string) (jwt.MapClaims, error) {
 
     token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-    // Don't forget to validate the alg is what you expect:
+        // Don't forget to validate the alg is what you expect:
         if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             fmt.Printf("Invalid Signing Method: %v", token.Header["alg"])
             return nil, fmt.Errorf("Unauthorized")
         }
         secret := os.Getenv("JWT_SECRET")
-        fmt.Println("Never print the secret:",secret)
         // hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
         return []byte(secret), nil
     })
+
     if err != nil{
         fmt.Println("Failed to parse JWT token:", err)
-        return fmt.Errorf("Unauthorized")
+        return nil, fmt.Errorf("Unauthorized")
+    }
+    if !token.Valid {
+        fmt.Println("invalid token")
+        return nil, fmt.Errorf("Unauthorized")
     }
 
-    if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-        fmt.Println(claims)
+    claims, ok := token.Claims.(jwt.MapClaims)
+    if !ok{
+        return nil, fmt.Errorf("Unauthorized")
     }
-    return fmt.Errorf("Unauthorized")
+    return claims, nil 
 }
