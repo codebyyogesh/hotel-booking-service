@@ -13,7 +13,7 @@ const roomCollection ="rooms"
 
 type RoomStore interface{
     InsertRoom(context.Context, *types.Room)(*types.Room, error)
-    GetRooms(context.Context, string)(*[]types.Room, error)
+    GetRooms(context.Context, bson.M)(*[]types.Room, error)
 }
 
 type MongoRoomStore struct{
@@ -30,13 +30,7 @@ func NewMongoRoomStore(client *mongo.Client, hotelStore HotelStore) *MongoRoomSt
     }
 }
 
-func (s *MongoRoomStore)GetRooms(ctx context.Context, id string) (*[]types.Room, error){
-    // Mongodb does not accept direct ids, we need some kind of conversion to object id
-    oid, err := primitive.ObjectIDFromHex(id)
-    if err != nil{
-        return nil, err
-    }
-    filter := bson.M{"hotelID": oid}
+func (s *MongoRoomStore)GetRooms(ctx context.Context, filter bson.M) (*[]types.Room, error){
     cursor, err := s.collection.Find(ctx, filter)
     if err != nil{
         return nil, err
