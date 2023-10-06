@@ -15,6 +15,7 @@ type BookingStore interface{
     InsertBooking(context.Context, *types.Booking)(*types.Booking, error)
     GetBookings(context.Context, bson.M ) (*[]types.Booking, error) // *[]types.Booking will be a pointer to a slice
     GetBookingByID(context.Context, string) (*types.Booking, error)
+    UpdateBooking(context.Context, string, bson.M) error
 }
 
 type MongoBookingStore struct{
@@ -63,3 +64,13 @@ func (s *MongoBookingStore)GetBookings(ctx context.Context, filter bson.M)(*[]ty
     }
     return &bookings, nil
 }
+
+func (s *MongoBookingStore)UpdateBooking(ctx context.Context, id string, update bson.M) error {
+    oid, err := primitive.ObjectIDFromHex(id)
+    if err != nil{
+        return  err
+    }
+    // dont pass bson.M{"_id": oid} because UpdateByID internally uses bson.M{"_id": oid}, so pass only oid
+    _, err = s.collection.UpdateByID(ctx, oid, bson.M{"$set": update})
+    return err
+} 
