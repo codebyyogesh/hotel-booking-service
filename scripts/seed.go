@@ -8,6 +8,7 @@ import (
 
 	"github.com/codebyyogesh/hotel-booking-service/api"
 	"github.com/codebyyogesh/hotel-booking-service/db"
+	"github.com/codebyyogesh/hotel-booking-service/db/fixtures"
 	"github.com/codebyyogesh/hotel-booking-service/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -84,34 +85,39 @@ func seedBooking(userID, roomID primitive.ObjectID, numPersons int, from, till t
     return insertedBooking
 }
 func main(){
-    fmt.Println("Seeding the user to db...")
-    user := seedUser(false, "raju", "gentleman", "raju@me.com", "mybestsecurepassword") //regular user
-    seedUser(true, "admin", "admin", "admin@me.com", "admin123") // admin
-    fmt.Println("Seeding the hotel to db...")
-    seedHotel("The Leela Palace", "Bengaluru", 3)
-    seedHotel("Kaldan Samudra", "Mahabalipuram", 5)
-    hotel := seedHotel("The Taj", "Mumbai", 4)
-    fmt.Println("Seeding the room to db...")
-    seedRoom("small", false, 9999.9, hotel.ID)
-    seedRoom("normal", true, 14999.9, hotel.ID)
-    room :=seedRoom("kingsize", true, 19999.9, hotel.ID)
-    fmt.Println("Seeding the booking to db...")
-    booking := seedBooking(user.ID, room.ID, 2, time.Now(), time.Now().AddDate(0, 0, 2))
-    fmt.Println("booking id:", booking.ID)
-} 
-
-// special function gets automatically called before main()
-func init(){
-    var err error
-    client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+    ctx := context.Background()
+    client, err := mongo.Connect(ctx, options.Client().ApplyURI(db.DBURI))
     if err != nil {
         log.Fatal(err)
     }
     if client.Database(db.DBNAME).Drop(ctx); err != nil{
         log.Fatal(err)
     }
-    hotelStore = db.NewMongoHotelStore(client)
-    roomStore = db.NewMongoRoomStore(client, hotelStore)
-    userStore = db.NewMongoUserStore(client)
-    bookingStore = db.NewMongoBookingStore(client)
-}
+
+    hotelStore := db.NewMongoHotelStore(client)
+    roomStore := db.NewMongoRoomStore(client, hotelStore)
+    userStore := db.NewMongoUserStore(client)
+    bookingStore := db.NewMongoBookingStore(client)
+    store := &db.Store {
+        Hotels:   hotelStore,
+        Rooms :   roomStore,
+        User :    userStore,
+        Booking : bookingStore,
+    }
+    // seed user
+    user := fixtures.CreateUser(store, "raju", "foo", false)
+    fmt.Printf("%s -> %s\n", user.Email, api.CreateTokenFromUser(user))
+    fmt.Printf("-----------------------------------------------------------\n")
+    admin := fixtures.CreateUser(store, "admin", "admin", true) // admin
+    fmt.Printf("%s -> %s\n", admin.Email, api.CreateTokenFromUser(admin))
+    // seed hotel
+    hotel := fixtures.CreateHotel(store, "The Leela Palace", "Bengaluru", 3, nil)
+    // seed room
+    fixtures.CreateRoom(store, "small", false, 9999.9, hotel.ID)
+    fixtures.CreateRoom(store, "normal", true, 14999.9, hotel.ID)
+    room := fixtures.CreateRoom(store, "kingsize", true, 14999.9, hotel.ID)
+    // seed booking
+    booking := fixtures.CreateBooking(store, user.ID, room.ID, 2, time.Now(), time.Now().AddDate(0, 0, 2))
+    fmt.Printf("-----------------------------------------------------------\n")
+    fmt.Println("booking ->", booking.ID)
+} 
