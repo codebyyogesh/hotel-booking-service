@@ -12,7 +12,8 @@ import (
 
 type testdb struct {
     client *mongo.Client
-    *db.Store
+    *db.Store // note: We use the same db that is used for the main program because NewMongoHotelStore() etc in setup
+            // uses db.DBNAME = "hotel-booking" which is the same as the main program.
 }
 
 func (tdb *testdb) teardown(t *testing.T) {
