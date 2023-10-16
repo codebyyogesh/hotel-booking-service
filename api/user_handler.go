@@ -1,10 +1,12 @@
 package api
 
 import (
+	"errors"
 
 	"github.com/codebyyogesh/hotel-booking-service/db"
 	"github.com/codebyyogesh/hotel-booking-service/types"
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 type UserHandler struct{
     userStore db.UserStore // is an interface
@@ -24,7 +26,7 @@ func (h *UserHandler)HandlePutUser(c *fiber.Ctx) error{
     var params types.UpdateUserParams
 
     if err := c.BodyParser(&params); err != nil {
-        return err
+        return ErrorBadRequest()
     }
     h.userStore.UpdateUser(ctx, UserID,  &params)
     return c.JSON(map[string]string{"Updated": UserID})
@@ -36,7 +38,7 @@ func (h *UserHandler)HandleDeleteUser(c *fiber.Ctx) error{
         ctx = c.Context()
     )
     if err := h.userStore.DeleteUser(ctx, UserID); err != nil{
-        return err
+        return ErrorResourceNotFound(UserID)
     }
     return c.JSON(map[string]string{"Deleted": UserID})
 }
@@ -45,7 +47,7 @@ func (h *UserHandler)HandleDeleteUser(c *fiber.Ctx) error{
 func (h *UserHandler)HandlePostUser(c *fiber.Ctx) error{
     var params types.CreateUserParams
     if err:= c.BodyParser(&params); err != nil{  // parse into ValidateParams
-        return err
+        return ErrorBadRequest()
     }
     // Validate User before using it
     if errors := params.ValidateUserParams(); len(errors) > 0{
@@ -72,6 +74,9 @@ func (h *UserHandler)HandleGetUser(c *fiber.Ctx) error{
     )
     user, err := h.userStore.GetUserByID(ctx, id)
     if err != nil{
+        if errors.Is(err, mongo.ErrNoDocuments) {
+            return c.JSON(map[string]string{"error": "not found"})
+         }
         return err
     }
     return c.JSON(user)
@@ -81,7 +86,7 @@ func (h *UserHandler)HandleGetUser(c *fiber.Ctx) error{
 func (h *UserHandler)HandleGetUsers(c *fiber.Ctx) error{
     users, err := h.userStore.GetUsers(c.Context())
     if err != nil{
-        return err
+        return ErrorResourceNotFound("users")
     }
     return c.JSON(users)
 }

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codebyyogesh/hotel-booking-service/api/middleware"
 	"github.com/codebyyogesh/hotel-booking-service/db/fixtures"
 	"github.com/codebyyogesh/hotel-booking-service/types"
 	"github.com/gofiber/fiber/v2"
@@ -26,7 +25,7 @@ func TestGetUserBooking(t *testing.T) {
         booking = fixtures.CreateBooking(tdb.Store, user.ID, room.ID, 2, from, till)
         app  = fiber.New()
         bookingHandler = NewBookingHandler(tdb.Store)
-        route = app.Group("/", middleware.JWTAuthentication(tdb.User))
+        route = app.Group("/", JWTAuthentication(tdb.User))
     )
     _ = booking
     route.Get("/:id", bookingHandler.HandleGetBooking)
@@ -61,7 +60,6 @@ func TestGetUserBooking(t *testing.T) {
     if resp.StatusCode == http.StatusOK {
         t.Fatalf("non 200 code got %d", resp.StatusCode)
     }
-
 }
  
 
@@ -76,11 +74,11 @@ func TestAdminGetBookings(t *testing.T) {
         from = time.Now()
         till = time.Now().AddDate(0, 0, 5)
         booking = fixtures.CreateBooking(tdb.Store, user.ID, room.ID, 2, from, till)
-        app  = fiber.New()
+        app  = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
         bookingHandler = NewBookingHandler(tdb.Store)
         // Group uses variadic params as handlers, here there are two handlers passed
         // first JWTAuthentication gets first called followed by AdminAuth
-        adminGrp = app.Group("/", middleware.JWTAuthentication(tdb.User), middleware.AdminAuth )
+        adminGrp = app.Group("/", JWTAuthentication(tdb.User), AdminAuth )
     )
     _ = booking
     adminGrp.Get("/", bookingHandler.HandleGetBookings)
@@ -115,7 +113,7 @@ func TestAdminGetBookings(t *testing.T) {
     if err != nil {
         t.Fatal(err)
     }
-    if resp.StatusCode == http.StatusOK {
+    if resp.StatusCode != http.StatusUnauthorized {
         t.Fatalf("expected a non 200 status code got %d", resp.StatusCode)
     }
 }
