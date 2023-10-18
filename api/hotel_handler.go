@@ -39,11 +39,41 @@ func (h *HotelHandler)HandleGetHotel(c *fiber.Ctx) error{
     }
     return c.JSON(hotel)
 }
+
+type ResourceResp struct{
+    NumberOfItems int `json:"numberofitems"`
+    Data any `json:"data"`
+    Page int `json:"page"`
+}
+type HotelQueryParams struct{
+    db.Pagination
+    Rating int
+    //Add more filter query params here (say roomsize or number of rooms etc)
+}
 // get hotels list
+// ToDo : Remove bson.M filter from here and use a generic struct suitable for all databases
+// currently only mongodb is supported
 func (h *HotelHandler)HandleGetHotels(c *fiber.Ctx) error{
-    hotels, err := h.store.Hotels.GetHotels(c.Context(), nil)
+    //var pagination db.Pagination
+    var params HotelQueryParams
+
+
+    if err := c.QueryParser(&params); err != nil{
+        return ErrorBadRequest()
+    }
+    if params.Rating <= 0 || params.Rating > 5{
+        return ErrorBadRequest()
+    }
+    filter := bson.M{"rating": bson.M{"$eq": params.Rating}}
+
+    hotels, err := h.store.Hotels.GetHotels(c.Context(), filter, &params.Pagination)
     if err != nil{
         return ErrorResourceNotFound("hotels")
     }
-    return c.JSON(hotels)
+    resp := ResourceResp{
+        NumberOfItems: len(*hotels),
+        Data: hotels,
+        Page: params.Page,
+    }
+    return c.JSON(resp)
 }

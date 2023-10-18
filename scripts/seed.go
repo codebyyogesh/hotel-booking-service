@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/exp/rand"
 )
 
 var (
@@ -120,4 +121,9 @@ func main(){
     booking := fixtures.CreateBooking(store, user.ID, room.ID, 2, time.Now(), time.Now().AddDate(0, 0, 2))
     fmt.Printf("-----------------------------------------------------------\n")
     fmt.Println("booking ->", booking.ID)
+    for i := 0; i < 100; i++ {
+        name := fmt.Sprintf("hotel-%d", i)
+        location := fmt.Sprintf("location-%d", i)
+        fixtures.CreateHotel(store, name, location, rand.Intn(5) + 1, nil)
+    }
 } 

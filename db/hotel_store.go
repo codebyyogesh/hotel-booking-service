@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const hotelCollection = "hotels"
@@ -14,7 +15,7 @@ const hotelCollection = "hotels"
 type HotelStore interface{
     InsertHotel(context.Context, *types.Hotel)(*types.Hotel, error)
     UpdateHotel(context.Context, bson.M, bson.M)(error)
-    GetHotels(context.Context, bson.M)(*[]types.Hotel, error)
+    GetHotels(context.Context, bson.M, *Pagination)(*[]types.Hotel, error)
     GetHotelByID(context.Context, string) (*types.Hotel, error)
 }
 
@@ -63,15 +64,20 @@ func (s *MongoHotelStore)GetHotelByID(ctx context.Context,
     return &hotel, nil
 }
 
-    func (s *MongoHotelStore)GetHotels(ctx context.Context, filter bson.M)(*[]types.Hotel, error){
-    cursor, err:= s.collection.Find(ctx, filter); 
-    if err != nil{
-        return nil, err
-    }
-    var hotels []types.Hotel
-    if err = cursor.All(ctx, &hotels); err != nil {
-        return nil, err
-    }
+    func (s *MongoHotelStore)GetHotels(ctx context.Context, filter bson.M, p *Pagination)(*[]types.Hotel, error){
+        opts := options.FindOptions{}
+        if p != nil{
+            opts.SetSkip(int64(p.Page-1) * int64(p.Limit))
+            opts.SetLimit(int64(p.Limit))
+        }
+        cursor, err:= s.collection.Find(ctx, filter, &opts); 
+        if err != nil{
+            return nil, err
+        }
+        var hotels []types.Hotel
+        if err = cursor.All(ctx, &hotels); err != nil {
+            return nil, err
+        }
     return &hotels, nil
 }
 
