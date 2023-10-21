@@ -4,8 +4,10 @@ import (
 	"context"
 	"flag"
 	"log"
+	"os"
 
 	api "github.com/codebyyogesh/hotel-booking-service/api"
+	env "github.com/codebyyogesh/hotel-booking-service/config"
 	"github.com/codebyyogesh/hotel-booking-service/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,12 +20,12 @@ var config = fiber.Config{
 
 
 func main(){
-    client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+    mongoDB_EndPoint:= os.Getenv("MONGO_DB_URL")
+    client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoDB_EndPoint))
     if err != nil {
         log.Fatal(err)
     }
 
-    listenAddr := flag.String("listenAddr", ":5000", "Listen address of the API server")
     flag.Parse()
 
     // create new user handler - handler initialization after db initialization.
@@ -79,7 +81,11 @@ func main(){
     // cancel booking
     apiv1.Get("/booking/:id/cancel", bookingHandler.HandleCancelBooking)
 
+    listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
+    app.Listen(listenAddr)
+}
 
-    app.Listen(*listenAddr)
 
+func init() {
+    env.LoadEnv()
 }

@@ -17,13 +17,15 @@ type testdb struct {
 }
 
 func (tdb *testdb) teardown(t *testing.T) {
-    if err := tdb.client.Database(db.DBNAME).Drop(context.TODO()); err != nil {
+    dbname := db.DBNAME
+    if err := tdb.client.Database(dbname).Drop(context.TODO()); err != nil {
         t.Fatal(err)
     }
 }
 
 func setup(t *testing.T) *testdb {
-    client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+    dburi  := db.DBURI
+    client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dburi))
     if err != nil {
         log.Fatal(err)
     }

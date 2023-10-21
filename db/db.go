@@ -1,11 +1,14 @@
 package db
 
-// General db functions
-const (
-    DBNAME     = "hotel-booking"
-    TestDBNAME = "hotel-booking-test"
-    DBURI      =  "mongodb://localhost:27017"
+import (
+	"os"
+
+	env "github.com/codebyyogesh/hotel-booking-service/config"
 )
+
+// General db functions
+var DBNAME string
+var DBURI string
 
 type Store struct{
     User  UserStore
@@ -17,4 +20,10 @@ type Store struct{
 type Pagination struct{
     Limit int
     Page int
+}
+
+func init() {
+    env.LoadEnv()
+    DBNAME = os.Getenv("MONGO_DB_NAME")
+    DBURI  = os.Getenv("MONGO_DB_URL")
 }
