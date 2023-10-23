@@ -25,7 +25,6 @@ func main(){
     if err != nil {
         log.Fatal(err)
     }
-
     flag.Parse()
 
     // create new user handler - handler initialization after db initialization.
@@ -80,6 +79,13 @@ func main(){
 
     // cancel booking
     apiv1.Get("/booking/:id/cancel", bookingHandler.HandleCancelBooking)
+
+    log.Println("Successfully connected and pinged.")
+
+    dbName := os.Getenv("MONGO_DB_NAME")
+    database := client.Database(dbName)
+
+    log.Println(dbName, database.Name())
 
     listenAddr := os.Getenv("HTTP_LISTEN_ADDRESS")
     app.Listen(listenAddr)

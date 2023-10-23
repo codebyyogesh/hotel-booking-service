@@ -8,4 +8,10 @@ seed:
 	@go run scripts/seed.go
 
 test:
-	@go test -v ./...
+	@go test -v ./... -count=1
+
+docker:
+	echo "building docker file"
+	@docker build -t api .
+	echo "running API inside Docker container"
+	@docker run -p 4444:4444 api
